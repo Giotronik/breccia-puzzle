@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Breccia APS - Puzzle Sagra di Baggio</title>
+  <style>
+    :root {
+      --terracotta: #9B4B27;
+      --terracotta-dark: #71351d;
+      --bg-cream: #F6F3EE;
+      --dark-card: #211D1A;
+      --salvia: #A2B9A7;
+      --gold: #D4AF37;
+      --text: #292522;
+      --muted: #746D66;
+      --line: #E7E0D8;
+      --surface: #FFFFFF;
+      --shadow: 0 18px 50px rgba(49, 34, 24, .09);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      padding: 28px 16px 40px;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 10% 0%, rgba(162,185,167,.18), transparent 34rem),
+        radial-gradient(ellipse at 100% 8%, rgba(212,175,55,.12), transparent 30rem),
+        var(--bg-cream);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      user-select: none;
+    }
+
+    .app-shell { width: 100%; max-width: 620px; }
+
+    header { text-align: center; margin: 0 auto 22px; }
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 10px;
+      border-radius: 14px;
+      color: white;
+      background: var(--terracotta);
+      box-shadow: 0 7px 18px rgba(155,75,39,.22);
+      font-family: Georgia, serif;
+      font-size: 26px;
+      font-weight: 800;
+    }
+    h1 {
+      margin: 0;
+      color: var(--text);
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      line-height: 1.15;
+      letter-spacing: -.045em;
+      font-weight: 800;
+    }
+    p.sub {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: .94rem;
+      line-height: 1.5;
+    }
+
+    .game-card {
+      width: 100%;
+      padding: clamp(16px, 4vw, 26px);
+      background: rgba(255,255,255,.88);
+      border: 1px solid rgba(231,224,216,.95);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .section-label {
+      display: block;
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .diff-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .btn-diff {
+      min-height: 46px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #fff;
+      color: #5E554E;
+      font: inherit;
+      font-size: .88rem;
+      font-weight: 750;
+      cursor: pointer;
+      transition: background .18s, border-color .18s, transform .18s, box-shadow .18s;
+    }
+    .btn-diff:hover { border-color: #CDA18B; transform: translateY(-1px); }
+    .btn-diff.active {
+      color: #fff;
+      background: var(--terracotta);
+      border-color: var(--terracotta);
+      box-shadow: 0 5px 12px rgba(155,75,39,.18);
+    }
+    .btn-test {
+      grid-column: 1 / -1;
+      justify-self: center;
+      margin-top: 2px;
+      padding: 7px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: #FAF8F5;
+      font: inherit;
+      font-size: .76rem;
+      cursor: pointer;
+    }
+
+    .instructions {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 18px;
+      padding: 12px 14px;
+      border: 1px solid #DDE7DE;
+      border-radius: 14px;
+      background: #F3F7F2;
+      color: #4D6252;
+      font-size: .84rem;
+      line-height: 1.45;
+    }
+    .instructions .step-icon {
+      display: inline-flex;
+      flex: 0 0 25px;
+      align-items: center;
+      justify-content: center;
+      width: 25px;
+      height: 25px;
+      border-radius: 8px;
+      background: #DFEADF;
+      font-size: .9rem;
+    }
+
+    .board-wrap { display: flex; flex-direction: column; align-items: center; }
+    .board-frame {
+      position: relative;
+      width: min(100%, 360px);
+      aspect-ratio: 1;
+      background: #fff;
+      border-radius: 17px;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 1px var(--line), 0 8px 24px rgba(38,27,20,.09);
+      overflow: hidden;
+    }
+    #preview-canvas, #board-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #preview-canvas { opacity: .16; pointer-events: none; }
+    #board-canvas { cursor: grab; touch-action: none; }
+    .piece-card { touch-action: none; user-select: none; }
+    .drag-ghost { position: fixed; z-index: 9999; pointer-events: none; opacity: .92; filter: drop-shadow(0 8px 10px rgba(0,0,0,.22)); transform: translate(-50%, -50%); }
+
+    .tray-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin: 22px 0 10px;
+    }
+    .tray-title {
+      margin: 0;
+      color: var(--text);
+      font-size: .95rem;
+      font-weight: 800;
+    }
+    .tray-hint { color: var(--muted); font-size: .76rem; }
+    .tray {
+      width: 100%;
+      min-height: 112px;
+      max-height: 210px;
+      overflow-y: auto;
+      background: #FAF8F5;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-content: flex-start;
+      scrollbar-color: #D0C4B8 transparent;
+    }
+    .piece-card {
+      border: 2px solid #E5DED7;
+      border-radius: 9px;
+      cursor: pointer;
+      background: #fff;
+      transition: transform .15s, border-color .15s, box-shadow .15s;
+    }
+    .piece-card:hover { transform: translateY(-2px); border-color: #CDA18B; }
+    .piece-card.selected {
+      border-color: var(--terracotta);
+      box-shadow: 0 0 0 3px rgba(155,75,39,.18);
+      transform: scale(1.06);
+    }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 650;
+    }
+    .progress-track {
+      height: 6px;
+      margin-top: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #EEE8E1;
+    }
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--terracotta), #C57B4F);
+      transition: width .2s ease;
+    }
+
+    #win-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(31,25,21,.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+      backdrop-filter: blur(5px);
+    }
+    #win-modal.show { display: flex; }
+    .win-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 30px 22px 24px;
+      text-align: center;
+      max-width: 360px;
+      width: 100%;
+      border: 1px solid rgba(212,175,55,.65);
+      box-shadow: 0 22px 70px rgba(0,0,0,.25);
+    }
+    .win-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 14px;
+      border-radius: 19px;
+      background: #FBF2D8;
+      font-size: 1.8rem;
+    }
+    .win-badge {
+      display: inline-block;
+      margin-bottom: 8px;
+      color: #896A12;
+      font-size: .68rem;
+      font-weight: 850;
+      letter-spacing: .12em;
+    }
+    .win-card h2 { margin: 4px 0 10px; color: var(--text); font-size: 1.55rem; letter-spacing: -.035em; }
+    .win-card p { font-size: .9rem; line-height: 1.55; color: var(--muted); margin: 8px 0; }
+    .address {
+      background: #FAF8F5;
+      padding: 13px;
+      border-radius: 13px;
+      font-size: .86rem;
+      line-height: 1.5;
+      font-weight: 600;
+      margin: 16px 0;
+      border: 1px solid var(--line);
+    }
+    .btn-maps {
+      display: block;
+      background: var(--terracotta);
+      color: #fff;
+      text-decoration: none;
+      padding: 13px 15px;
+      border-radius: 12px;
+      font-weight: 750;
+      font-size: .9rem;
+      transition: background .18s, transform .18s;
+    }
+    .btn-maps:hover { background: var(--terracotta-dark); transform: translateY(-1px); }
+    .btn-reset {
+      margin-top: 14px;
+      padding: 6px 10px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font: inherit;
+      font-size: .8rem;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    @media (max-width: 420px) {
+      body { padding: 20px 10px 28px; }
+      header { margin-bottom: 16px; }
+      .game-card { border-radius: 20px; }
+      .tray-hint { font-size: .7rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="app-shell">
+    <header>
+      <div class="brand-mark" aria-hidden="true">B</div>
+      <h1>Breccia APS</h1>
+      <p class="sub">Sagra di Baggio<br>Completa il puzzle e scopri la sorpresa.</p>
+    </header>
+
+    <section class="game-card" aria-label="Gioco puzzle">
+      <span class="section-label">Scegli la difficoltà</span>
+      <div class="diff-bar">
+        <button class="btn-diff active" id="btn-easy" onclick="setMode(4)">Facile <span>· 16 pezzi</span></button>
+        <button class="btn-diff" id="btn-hard" onclick="setMode(6)">Difficile <span>· 36 pezzi</span></button>
+        <button class="btn-test" onclick="showWinModal()">🎁 Anteprima schermata finale</button>
+      </div>
+
+      <div class="instructions">
+        <span class="step-icon" aria-hidden="true">✦</span>
+        <span><b>Come si gioca</b><br>Seleziona una tessera in basso, poi tocca la casella corrispondente sul tabellone.</span>
+      </div>
+
+      <div class="board-wrap">
+        <div class="board-frame">
+          <canvas id="preview-canvas" width="300" height="300"></canvas>
+          <canvas id="board-canvas" width="300" height="300"></canvas>
+        </div>
+      </div>
+
+      <div class="tray-heading">
+        <h2 class="tray-title">Le tue tessere</h2>
+        <span class="tray-hint">Tocca per selezionare</span>
+      </div>
+      <div class="tray" id="tray"></div>
+
+      <div class="progress-row">
+        <span>Avanzamento</span>
+        <span id="progress-text">0 di 16 tessere</span>
+      </div>
+      <div class="progress-track" role="progressbar" aria-label="Avanzamento puzzle" aria-valuemin="0" aria-valuemax="16" aria-valuenow="0" id="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Schermata Dono Finale -->
+  <div id="win-modal">
+    <div class="win-card">
+      <div class="win-icon" aria-hidden="true">🎁</div>
+      <div class="win-badge">PUZZLE COMPLETATO</div>
+      <h2>Hai vinto una sorpresa!</h2>
+      <p>Mostra questo schermo ai volontari al locale per ritirare la sorpresa:</p>
+      
+      <div class="address">
+        📍 <b>Breccia APS</b><br>
+        Via Val Cannobina 14/A, Baggio (Milano)
+      </div>
+
+      <a class="btn-maps" href="https://www.google.com/maps/dir/?api=1&destination=Via+Val+Cannobina+14+Milano" target="_blank">
+        Avvia Navigatore a Piedi
+      </a>
+      <button class="btn-reset" onclick="initGame()">Gioca di nuovo</button>
+    </div>
+  </div>
+
+  <script>
+    let N = 4;
+    const SIZE = 300;
+    let pieces = [];
+    let placedCount = 0;
+    let selectedPiece = null;
+
+    const board = document.getElementById('board-canvas');
+    const bCtx = board.getContext('2d');
+    const preview = document.getElementById('preview-canvas');
+    const pCtx = preview.getContext('2d');
+    const tray = document.getElementById('tray');
+    const winModal = document.getElementById('win-modal');
+
+    function drawLogoVector(c, mode) {
+      c.clearRect(0, 0, SIZE, SIZE);
+      const cx = 150, cy = 150;
+
+      if (mode === 4) {
+        // --- LOGO FACILE ---
+        c.fillStyle = '#FAF8F5';
+        c.fillRect(0, 0, SIZE, SIZE);
+
+        // Cerchio nero interno
+        c.beginPath();
+        c.arc(cx, cy, 135, 0, Math.PI * 2);
+        c.fillStyle = '#111111';
+        c.fill();
+        c.lineWidth = 3;
+        c.strokeStyle = '#9B4B27';
+        c.stroke();
+
+        // Lettera B terracotta
+        c.fillStyle = '#9B4B27';
+        c.font = '900 200px "Times New Roman", Georgia, serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText('B', cx - 18, cy + 12);
+
+        // Stella verde salvia
+        drawSageStar(c, cx + 55, cy + 8, 40, '#A2B9A7');
+
+        // Scritta corsiva "per portare luce"
+        c.save();
+        c.font = 'italic 500 20px "Brush Script MT", cursive, sans-serif';
+        c.fillStyle = '#A2B9A7';
+        c.translate(cx + 40, cy - 110);
+        c.rotate(0.35);
+        c.fillText('per portare luce', 0, 0);
+        c.restore();
+
+      } else {
+        // --- LOGO DIFFICILE ---
+        c.fillStyle = '#181514';
+        c.fillRect(0, 0, SIZE, SIZE);
+
+        // Cerchio Terracotta pieno
+        c.beginPath();
+        c.arc(cx, cy, 140, 0, Math.PI * 2);
+        c.fillStyle = '#9B4B27';
+        c.fill();
+
+        // Lettera B bianca
+        c.fillStyle = '#ffffff';
+        c.font = '900 215px "Times New Roman", Georgia, serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText('B', cx - 16, cy + 12);
+
+        // Stella verde salvia
+        drawSageStar(c, cx + 56, cy + 10, 40, '#A2B9A7');
+      }
+    }
+
+    function drawSageStar(c, x, y, s, col) {
+      c.save();
+      c.fillStyle = col;
+      c.beginPath();
+      c.moveTo(x, y - s);
+      c.quadraticCurveTo(x, y, x + s * 0.7, y);
+      c.quadraticCurveTo(x, y, x, y + s);
+      c.quadraticCurveTo(x, y, x - s * 0.7, y);
+      c.quadraticCurveTo(x, y, x, y - s);
+      c.fill();
+      c.restore();
+    }
+
+    // Curva di incastro maschio/femmina
+    function tabPath(c, x1, y1, x2, y2, sign) {
+      const dx = x2 - x1, dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      const ang = Math.atan2(dy, dx);
+
+      c.save();
+      c.translate(x1, y1);
+      c.rotate(ang);
+
+      if (sign === 0) {
+        c.lineTo(len, 0);
+      } else {
+        const h = sign * (len * 0.22);
+        c.lineTo(len * 0.35, 0);
+        c.bezierCurveTo(len * 0.35, h * 0.7, len * 0.42, h, len * 0.5, h);
+        c.bezierCurveTo(len * 0.58, h, len * 0.65, h * 0.7, len * 0.65, 0);
+        c.lineTo(len, 0);
+      }
+      c.restore();
+    }
+
+    // Immagine PNG usata come sorgente del puzzle.
+    // Metti puzzle.png nella stessa cartella di index.html.
+    const sourceImage = new Image();
+    sourceImage.onload = () => initGame();
+    sourceImage.onerror = () => {
+      alert('Impossibile caricare puzzle.png. Verifica che sia nella stessa cartella di index.html.');
+    };
+    sourceImage.src = 'puzzle.png';
+
+    function initGame() {
+      if (!sourceImage.complete || !sourceImage.naturalWidth) return;
+
+      placedCount = 0;
+      selectedPiece = null;
+      dragState = null;
+      removeDragGhost();
+      pieces = [];
+      updateProgress();
+      bCtx.clearRect(0, 0, SIZE, SIZE);
+      tray.innerHTML = '';
+      winModal.classList.remove('show');
+
+      // 1. Anteprima trasparente dell'immagine PNG
+      pCtx.clearRect(0, 0, SIZE, SIZE);
+      pCtx.drawImage(sourceImage, 0, 0, SIZE, SIZE);
+
+      // 2. Canvas sorgente con l'immagine completa
+      const srcCanvas = document.createElement('canvas');
+      srcCanvas.width = SIZE;
+      srcCanvas.height = SIZE;
+      srcCanvas.getContext('2d').drawImage(sourceImage, 0, 0, SIZE, SIZE);
+
+      const pSize = SIZE / N;
+      const pad = pSize * 0.4;
+
+      const hTabs = Array.from({length: N}, () => Array(N - 1).fill(0).map(() => (Math.random() < 0.5 ? 1 : -1)));
+      const vTabs = Array.from({length: N - 1}, () => Array(N).fill(0).map(() => (Math.random() < 0.5 ? 1 : -1)));
+
+      for (let r = 0; r < N; r++) {
+        for (let col = 0; col < N; col++) {
+          const top = (r === 0) ? 0 : -vTabs[r - 1][col];
+          const right = (col === N - 1) ? 0 : hTabs[r][col];
+          const bottom = (r === N - 1) ? 0 : vTabs[r][col];
+          const left = (col === 0) ? 0 : -hTabs[r][col - 1];
+
+          const pCan = document.createElement('canvas');
+          pCan.width = pSize + pad * 2;
+          pCan.height = pSize + pad * 2;
+          const pctx = pCan.getContext('2d');
+
+          pctx.save();
+          pctx.translate(pad, pad);
+          pctx.beginPath();
+          pctx.moveTo(0, 0);
+          tabPath(pctx, 0, 0, pSize, 0, top);
+          tabPath(pctx, pSize, 0, pSize, pSize, right);
+          tabPath(pctx, pSize, pSize, 0, pSize, bottom);
+          tabPath(pctx, 0, pSize, 0, 0, left);
+          pctx.closePath();
+
+          pctx.clip();
+          pctx.drawImage(srcCanvas, -col * pSize, -r * pSize);
+          pctx.lineWidth = 1.5;
+          pctx.strokeStyle = 'rgba(255,255,255,0.6)';
+          pctx.stroke();
+          pctx.restore();
+
+          pieces.push({
+            id: r * N + col,
+            r, col,
+            canvas: pCan,
+            pad,
+            placed: false
+          });
+        }
+      }
+
+      // Mescola tessere nel vassoio
+      const shuffled = [...pieces].sort(() => Math.random() - 0.5);
+      shuffled.forEach(p => {
+        const thumb = document.createElement('canvas');
+        thumb.width = 54;
+        thumb.height = 54;
+        const tctx = thumb.getContext('2d');
+        tctx.drawImage(p.canvas, 0, 0, 54, 54);
+        thumb.className = 'piece-card';
+        thumb.dataset.id = p.id;
+
+        // Click/tap remains available as an alternative to dragging.
+        thumb.addEventListener('click', () => {
+          if (suppressPieceClick) {
+            suppressPieceClick = false;
+            return;
+          }
+          document.querySelectorAll('.piece-card').forEach(c => c.classList.remove('selected'));
+          if (selectedPiece === p) {
+            selectedPiece = null;
+          } else {
+            selectedPiece = p;
+            thumb.classList.add('selected');
+          }
+        });
+
+        // Pointer Events work with mouse, touchscreen and stylus.
+        thumb.addEventListener('pointerdown', (e) => {
+          if (p.placed || e.button !== 0) return;
+          dragState = {
+            piece: p,
+            startX: e.clientX,
+            startY: e.clientY,
+            pointerId: e.pointerId,
+            moved: false
+          };
+        });
+
+        tray.appendChild(thumb);
+      });
+    }
+
+    let dragState = null;
+    let dragGhost = null;
+    let suppressPieceClick = false;
+    let suppressBoardClick = false;
+
+    function createDragGhost(piece, x, y) {
+      removeDragGhost();
+      dragGhost = document.createElement('canvas');
+      dragGhost.width = 76;
+      dragGhost.height = 76;
+      dragGhost.className = 'drag-ghost';
+      dragGhost.getContext('2d').drawImage(piece.canvas, 0, 0, 76, 76);
+      document.body.appendChild(dragGhost);
+      moveDragGhost(x, y);
+    }
+
+    function moveDragGhost(x, y) {
+      if (!dragGhost) return;
+      dragGhost.style.left = `${x}px`;
+      dragGhost.style.top = `${y}px`;
+    }
+
+    function removeDragGhost() {
+      if (dragGhost) dragGhost.remove();
+      dragGhost = null;
+    }
+
+    window.addEventListener('pointermove', (e) => {
+      if (!dragState || e.pointerId !== dragState.pointerId) return;
+      const distance = Math.hypot(e.clientX - dragState.startX, e.clientY - dragState.startY);
+      if (!dragState.moved && distance > 5) {
+        dragState.moved = true;
+        selectedPiece = dragState.piece;
+        createDragGhost(dragState.piece, e.clientX, e.clientY);
+        document.querySelectorAll('.piece-card').forEach(c => c.classList.remove('selected'));
+        const thumb = tray.querySelector(`[data-id="${dragState.piece.id}"]`);
+        if (thumb) thumb.classList.add('selected');
+      }
+      if (dragState.moved) {
+        e.preventDefault();
+        moveDragGhost(e.clientX, e.clientY);
+      }
+    }, { passive: false });
+
+    window.addEventListener('pointerup', (e) => {
+      if (!dragState || e.pointerId !== dragState.pointerId) return;
+      const state = dragState;
+      dragState = null;
+      removeDragGhost();
+
+      if (state.moved) {
+        suppressPieceClick = true;
+        suppressBoardClick = true;
+        const rect = board.getBoundingClientRect();
+        const droppedOnBoard = e.clientX >= rect.left && e.clientX <= rect.right &&
+                               e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (droppedOnBoard) {
+          placePieceAt(state.piece, e.clientX, e.clientY);
+        } else {
+          selectedPiece = state.piece;
+        }
+        // Prevent a synthesized click from changing the selection after dragging.
+        setTimeout(() => {
+          suppressPieceClick = false;
+          suppressBoardClick = false;
+        }, 0);
+      }
+    });
+
+    window.addEventListener('pointercancel', () => {
+      dragState = null;
+      removeDragGhost();
+    });
+
+    function placePieceAt(piece, clientX, clientY) {
+      if (!piece || piece.placed) return;
+      const rect = board.getBoundingClientRect();
+      if (clientX < rect.left || clientX > rect.right ||
+          clientY < rect.top || clientY > rect.bottom) return;
+
+      const x = (clientX - rect.left) * (SIZE / rect.width);
+      const y = (clientY - rect.top) * (SIZE / rect.height);
+      const pSize = SIZE / N;
+      const targetCol = Math.floor(x / pSize);
+      const targetRow = Math.floor(y / pSize);
+
+      if (targetCol === piece.col && targetRow === piece.r) {
+        bCtx.drawImage(
+          piece.canvas,
+          targetCol * pSize - piece.pad,
+          targetRow * pSize - piece.pad
+        );
+        piece.placed = true;
+        placedCount++;
+        updateProgress();
+
+        const thumb = tray.querySelector(`[data-id="${piece.id}"]`);
+        if (thumb) thumb.remove();
+        selectedPiece = null;
+
+        if (placedCount === pieces.length) {
+          setTimeout(showWinModal, 300);
+        }
+      } else {
+        board.style.transform = 'translateX(4px)';
+        setTimeout(() => board.style.transform = 'translateX(-4px)', 50);
+        setTimeout(() => board.style.transform = 'none', 100);
+      }
+    }
+
+    board.addEventListener('click', (e) => {
+      if (suppressBoardClick) {
+        suppressBoardClick = false;
+        return;
+      }
+      if (!selectedPiece) return;
+      placePieceAt(selectedPiece, e.clientX, e.clientY);
+    });
+
+    function updateProgress() {
+      const total = N * N;
+      const text = document.getElementById('progress-text');
+      const fill = document.getElementById('progress-fill');
+      const track = document.getElementById('progress-track');
+      if (text) text.textContent = `${placedCount} di ${total} tessere`;
+      if (fill) fill.style.width = `${(placedCount / total) * 100}%`;
+      if (track) {
+        track.setAttribute('aria-valuemax', total);
+        track.setAttribute('aria-valuenow', placedCount);
+      }
+    }
+
+    function showWinModal() {
+      winModal.classList.add('show');
+    }
+
+    function setMode(n) {
+      N = n;
+      document.getElementById('btn-easy').classList.toggle('active', n === 4);
+      document.getElementById('btn-hard').classList.toggle('active', n === 6);
+      initGame();
+    }
+
+    // initGame() viene chiamata quando puzzle.png è stata caricata.
+  </script>
+</body>
+</html>
