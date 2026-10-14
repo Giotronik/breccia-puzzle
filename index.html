@@ -508,14 +508,32 @@
       c.restore();
     }
 
-    // Immagine PNG usata come sorgente del puzzle.
-    // Metti puzzle.png nella stessa cartella di index.html.
+    // Immagini sorgente del puzzle.
     const sourceImage = new Image();
-    sourceImage.onload = () => initGame();
-    sourceImage.onerror = () => {
-      alert('Impossibile caricare puzzle.png. Verifica che sia nella stessa cartella di index.html.');
-    };
-    sourceImage.src = 'puzzle.png';
+    let loadedImage = '';
+
+    function loadPuzzleImage() {
+      const imageFile = N === 6 ? 'puzzle2.png' : 'puzzle.png';
+
+      // Se l'immagine corretta è già caricata, ricrea direttamente il puzzle.
+      if (sourceImage.complete &&
+          sourceImage.naturalWidth &&
+          loadedImage === imageFile) {
+        initGame();
+        return;
+      }
+
+      sourceImage.onload = () => {
+        loadedImage = imageFile;
+        initGame();
+      };
+
+      sourceImage.onerror = () => {
+        alert(`Impossibile caricare ${imageFile}. Verifica che sia nella stessa cartella di index.html.`);
+      };
+
+      sourceImage.src = imageFile;
+    }
 
     function initGame() {
       if (!sourceImage.complete || !sourceImage.naturalWidth) return;
@@ -767,10 +785,12 @@
       N = n;
       document.getElementById('btn-easy').classList.toggle('active', n === 4);
       document.getElementById('btn-hard').classList.toggle('active', n === 6);
-      initGame();
+      loadPuzzleImage();
+
     }
 
-    // initGame() viene chiamata quando puzzle.png è stata caricata.
+    // Carica l'immagine iniziale in modalità facile.
+    loadPuzzleImage();
   </script>
 </body>
 </html>
