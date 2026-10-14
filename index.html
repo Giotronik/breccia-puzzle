@@ -173,8 +173,15 @@
       height: 100%;
     }
     #preview-canvas { opacity: .16; pointer-events: none; }
-    #board-canvas { cursor: grab; touch-action: none; }
-    .piece-card { touch-action: none; user-select: none; }
+#board-canvas {
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.piece-card {
+  touch-action: none;
+  user-select: none;
+}
     .drag-ghost { position: fixed; z-index: 9999; pointer-events: none; opacity: .92; filter: drop-shadow(0 8px 10px rgba(0,0,0,.22)); transform: translate(-50%, -50%); }
 
     .tray-heading {
